@@ -8,7 +8,7 @@ export class PurchasesService {
   async findAll(userId: string) {
     return this.prisma.purchase.findMany({
       where: { userId },
-      orderBy: { purchaseDate: 'desc' },
+      orderBy: { purchaseAt: 'desc' },
       include: {
         market: { select: { id: true, name: true, city: true } },
         items: {
@@ -35,8 +35,8 @@ export class PurchasesService {
   }
 
   async create(userId: string, data: {
-    marketId: string;
-    purchaseDate: string;
+    marketId?: string;
+    purchaseDate?: string;
     totalAmount: number;
     items: Array<{
       productId: string;
@@ -49,8 +49,8 @@ export class PurchasesService {
       data: {
         userId,
         marketId: data.marketId,
-        purchaseDate: new Date(data.purchaseDate),
-        totalAmount: data.totalAmount,
+        purchaseAt: data.purchaseDate ? new Date(data.purchaseDate) : new Date(),
+        totalValue: data.totalAmount,
         items: {
           create: data.items.map((item) => ({
             productId: item.productId,
@@ -70,8 +70,8 @@ export class PurchasesService {
   async getInflationReport(userId: string) {
     const purchases = await this.prisma.purchase.findMany({
       where: { userId },
-      orderBy: { purchaseDate: 'asc' },
-      select: { purchaseDate: true, totalAmount: true },
+      orderBy: { purchaseAt: 'asc' },
+      select: { purchaseAt: true, totalValue: true },
     });
 
     if (purchases.length < 2) {
@@ -80,16 +80,16 @@ export class PurchasesService {
 
     const first = purchases[0];
     const last = purchases[purchases.length - 1];
-    const inflationRate = ((last.totalAmount - first.totalAmount) / first.totalAmount) * 100;
+    const inflationRate = ((last.totalValue - first.totalValue) / first.totalValue) * 100;
 
     return {
-      firstPurchaseDate: first.purchaseDate,
-      lastPurchaseDate: last.purchaseDate,
-      firstAmount: first.totalAmount,
-      lastAmount: last.totalAmount,
+      firstPurchaseDate: first.purchaseAt,
+      lastPurchaseDate: last.purchaseAt,
+      firstAmount: first.totalValue,
+      lastAmount: last.totalValue,
       inflationRate: Math.round(inflationRate * 100) / 100,
       totalPurchases: purchases.length,
       monthlyData: purchases,
     };
   }
-              }
+}
