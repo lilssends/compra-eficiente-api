@@ -48,11 +48,11 @@ export class MarketsController {
     @Body()
     body: {
       name: string;
-      address: string;
-      city: string;
-      state: string;
-      lat?: number;
-      lng?: number;
+      address?: string;
+      city?: string;
+      state?: string;
+      latitude?: number;
+      longitude?: number;
     },
   ) {
     return this.marketsService.create(body);
@@ -68,8 +68,8 @@ export class MarketsController {
       address?: string;
       city?: string;
       state?: string;
-      lat?: number;
-      lng?: number;
+      latitude?: number;
+      longitude?: number;
     },
   ) {
     return this.marketsService.update(id, body);
