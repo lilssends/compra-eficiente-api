@@ -6,7 +6,7 @@ import { AuthGuard } from '../auth/auth.guard';
 @ApiTags('users')
 @ApiBearerAuth()
 @UseGuards(AuthGuard)
-@Controller('api/v1/users')
+@Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
@@ -31,7 +31,7 @@ export class UsersController {
   }
 
   @Delete('account')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete account (LGPD right to erasure)' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete user account (LGPD right to erasure)' })
   deleteAccount(@Req() req: any) { return this.usersService.deleteAccount(req.user.id); }
 }
