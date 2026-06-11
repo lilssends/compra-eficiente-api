@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+  }
+
+  datasource db {
+    provider = "postgresql"
+      url      = env("DATABASE_URL")
+      }
+
+      model User {
+        id               String    @id @default(uuid())
+          firebaseUid      String    @unique
+            email            String    @unique
+              name             String?
+                avatarUrl        String?
+                  isPremium        Boolean   @default(false)
+                    premiumExpiresAt DateTime?
+                      createdAt        DateTime  @default(now())
+                        updatedAt        DateTime  @updatedAt
+
+                          settings        UserSettings?
+                            purchases       Purchase[]
+                              communityPrices CommunityPrice[]
+                                subscription    Subscription?
+                                  userPromoCodes  UserPromoCode[]
+
+                                    @@map("users")
+                                    }
+
+                                    model UserSettings {
+                                      id                   String   @id @default(uuid())
+                                        userId               String   @unique
+                                          shareAnonymously     Boolean  @default(false)
+                                            shareCity            Boolean  @default(false)
+                                              notificationsEnabled Boolean  @default(true)
+                                                language             String   @default("pt-BR")
+                                                  currency             String   @default("BRL")
+                                                    createdAt            DateTime @default(now())
+                                                      updatedAt            DateTime @updatedAt
+
+                                                        user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+                                                          @@map("user_settings")
+                                                          }
+
+                                                          model Product {
+                                                            id          String   @id @default(uuid())
+                                                              barcode     String?  @unique
+                                                                name        String
+                                                                  brand       String?
+                                                                    category    String?
+                                                                      unit        String?
+                                                                        imageUrl    String?
+                                                                          geminiData  Json?
+                                                                            createdAt   DateTime @default(now())
+                                                                              updatedAt   DateTime @updatedAt
+
+                                                                                images          ProductImage[]
+                                                                                  purchaseItems   PurchaseItem[]
+                                                                                    communityPrices CommunityPrice[]
+
+                                                                                      @@map("products")
+                                                                                      }
+
+                                                                                      model ProductImage {
+                                                                                        id        String   @id @default(uuid())
+                                                                                          productId String
+                                                                                            url       String
+                                                                                              isPrimary Boolean  @default(false)
+                                                                                                createdAt DateTime @default(now())
+
+                                                                                                  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+                                                                                                    @@map("product_images")
+                                                                                                    }
+                                                                                                    
+                                                                                                    model Market {
+                                                                                                      id        String   @id @default(uuid())
+                                                                                                        name      String
+                                                                                                          cnpj      String?
+                                                                                                            address   String?
+                                                                                                              city      String?
+                                                                                                                state     String?
+                                                                                                                  zipCode   String?
+                                                                                                                    latitude  Float?
+                                                                                                                      longitude Float?
+                                                                                                                        createdAt DateTime @default(now())
+                                                                                                                          updatedAt DateTime @updatedAt
+                                                                                                                          
+                                                                                                                            purchases       Purchase[]
+                                                                                                                              communityPrices CommunityPrice[]
+                                                                                                                              
+                                                                                                                                @@map("markets")
+                                                                                                                                }
+                                                                                                                                
+                                                                                                                                model Purchase {
+                                                                                                                                  id           String   @id @default(uuid())
+                                                                                                                                    userId       String
+                                                                                                                                      marketId     String?
+                                                                                                                                        totalAmount  Float
+                                                                                                                                          purchaseDate DateTime @default(now())
+                                                                                                                                            notes        String?
+                                                                                                                                              createdAt    DateTime @default(now())
+                                                                                                                                                updatedAt    DateTime @updatedAt
+                                                                                                                                                
+                                                                                                                                                  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+                                                                                                                                                    market Market? @relation(fields: [marketId], references: [id])
+                                                                                                                                                      items  PurchaseItem[]
+                                                                                                                                                      
+                                                                                                                                                        @@map("purchases")
+                                                                                                                                                        }
+                                                                                                                                                        
+                                                                                                                                                        model PurchaseItem {
+                                                                                                                                                          id         String   @id @default(uuid())
+                                                                                                                                                            purchaseId String
+                                                                                                                                                              productId  String
+                                                                                                                                                                quantity   Float
+                                                                                                                                                                  unitPrice  Float
+                                                                                                                                                                    totalPrice Float
+                                                                                                                                                                      createdAt  DateTime @default(now())
+                                                                                                                                                                      
+                                                                                                                                                                        purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+                                                                                                                                                                          product  Product  @relation(fields: [productId], references: [id])
+                                                                                                                                                                          
+                                                                                                                                                                            @@map("purchase_items")
+                                                                                                                                                                            }
+                                                                                                                                                                            
+                                                                                                                                                                            model CommunityPrice {
+                                                                                                                                                                              id         String   @id @default(uuid())
+                                                                                                                                                                                productId  String
+                                                                                                                                                                                  marketId   String?
+                                                                                                                                                                                    price      Float
+                                                                                                                                                                                      city       String?
+                                                                                                                                                                                        state      String?
+                                                                                                                                                                                          reportedAt DateTime @default(now())
+                                                                                                                                                                                            userId     String?
+                                                                                                                                                                                            
+                                                                                                                                                                                              product Product  @relation(fields: [productId], references: [id])
+                                                                                                                                                                                                market  Market?  @relation(fields: [marketId], references: [id])
+                                                                                                                                                                                                  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+                                                                                                                                                                                                  
+                                                                                                                                                                                                    @@map("community_prices")
+                                                                                                                                                                                                    }
+                                                                                                                                                                                                    
+                                                                                                                                                                                                    model Subscription {
+                                                                                                                                                                                                      id            String    @id @default(uuid())
+                                                                                                                                                                                                        userId        String    @unique
+                                                                                                                                                                                                          plan          String    @default("free")
+                                                                                                                                                                                                            status        String    @default("active")
+                                                                                                                                                                                                              startDate     DateTime  @default(now())
+                                                                                                                                                                                                                endDate       DateTime?
+                                                                                                                                                                                                                  paymentMethod String?
+                                                                                                                                                                                                                    createdAt     DateTime  @default(now())
+                                                                                                                                                                                                                      updatedAt     DateTime  @updatedAt
+                                                                                                                                                                                                                      
+                                                                                                                                                                                                                        user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+                                                                                                                                                                                                                        
+                                                                                                                                                                                                                          @@map("subscriptions")
+                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                          
+                                                                                                                                                                                                                          model PromoCode {
+                                                                                                                                                                                                                            id           String    @id @default(uuid())
+                                                                                                                                                                                                                              code         String    @unique
+                                                                                                                                                                                                                                discount     Float
+                                                                                                                                                                                                                                  discountType String    @default("percentage")
+                                                                                                                                                                                                                                    maxUses      Int?
+                                                                                                                                                                                                                                      currentUses  Int       @default(0)
+                                                                                                                                                                                                                                        expiresAt    DateTime?
+                                                                                                                                                                                                                                          isActive     Boolean   @default(true)
+                                                                                                                                                                                                                                            createdAt    DateTime  @default(now())
+                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                              userPromoCodes UserPromoCode[]
+                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                @@map("promo_codes")
+                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                model UserPromoCode {
+                                                                                                                                                                                                                                                  id          String   @id @default(uuid())
+                                                                                                                                                                                                                                                    userId      String
+                                                                                                                                                                                                                                                      promoCodeId String
+                                                                                                                                                                                                                                                        usedAt      DateTime @default(now())
+                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                          user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+                                                                                                                                                                                                                                                            promoCode PromoCode @relation(fields: [promoCodeId], references: [id])
+                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                              @@unique([userId, promoCodeId])
+                                                                                                                                                                                                                                                                @@map("user_promo_codes")
+                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                model AiAnalysis {
+                                                                                                                                                                                                                                                                  id         String   @id @default(uuid())
+                                                                                                                                                                                                                                                                    imageUrl   String
+                                                                                                                                                                                                                                                                      result     Json
+                                                                                                                                                                                                                                                                        confidence Float?
+                                                                                                                                                                                                                                                                          createdAt  DateTime @default(now())
+                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                            @@map("ai_analysis")
+                                                                                                                                                                                                                                                                            }
