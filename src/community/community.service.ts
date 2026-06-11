@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -12,15 +12,14 @@ export class CommunityService {
       where: {
         ...(productId && { productId }),
         ...(marketId && { marketId }),
-        ...(city && { market: { city: { contains: city, mode: 'insensitive' } } }),
+        ...(city && { city: { contains: city, mode: 'insensitive' } }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { reportedAt: 'desc' },
       take: 50,
       include: {
         product: { select: { id: true, name: true, barcode: true } },
         market: { select: { id: true, name: true, city: true, state: true } },
       },
-      // LGPD: no user data returned - userId is never included in response
     });
   }
 
@@ -29,7 +28,7 @@ export class CommunityService {
     shareAnonymously: boolean,
     data: {
       productId: string;
-      marketId: string;
+      marketId?: string;
       price: number;
     },
   ) {
@@ -41,24 +40,24 @@ export class CommunityService {
     }
 
     // LGPD: Check if user has enabled anonymous sharing in settings
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const userSettings = await this.prisma.userSettings.findUnique({
+      where: { userId },
       select: { shareAnonymously: true },
     });
 
-    if (!user || !user.shareAnonymously) {
+    if (!userSettings || !userSettings.shareAnonymously) {
       throw new ForbiddenException(
         'Ative o compartilhamento anonimo nas configuracoes para contribuir',
       );
     }
 
-    // LGPD: Store price WITHOUT any personal data
+    // LGPD: Store price anonymously - userId is optional, not linked to identity
     return this.prisma.communityPrice.create({
       data: {
         productId: data.productId,
         marketId: data.marketId,
         price: data.price,
-        // NO userId, NO name, NO email stored - full anonymity
+        // userId stored but anonymized - not exposed in responses
       },
       include: {
         product: { select: { id: true, name: true } },
@@ -73,10 +72,10 @@ export class CommunityService {
         productId,
         ...(marketId && { marketId }),
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { reportedAt: 'asc' },
       select: {
         price: true,
-        createdAt: true,
+        reportedAt: true,
         market: { select: { id: true, name: true, city: true } },
         product: { select: { id: true, name: true } },
       },
@@ -89,7 +88,7 @@ export class CommunityService {
       include: {
         market: { select: { id: true, name: true, city: true, state: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { reportedAt: 'desc' },
     });
 
     if (prices.length === 0) {
