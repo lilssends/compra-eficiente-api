@@ -6,41 +6,40 @@ export class MarketsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(userId: string, lat?: number, lng?: number) {
-    const markets = await this.prisma.market.findMany({
+    return this.prisma.market.findMany({
       orderBy: { name: 'asc' },
       include: {
         _count: {
-          select: { prices: true },
+          select: { communityPrices: true },
         },
       },
     });
-    return markets;
   }
 
   async findOne(id: string) {
     const market = await this.prisma.market.findUnique({
       where: { id },
       include: {
-        prices: {
+        communityPrices: {
           take: 20,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { reportedAt: 'desc' },
           include: { product: true },
         },
       },
     });
     if (!market) {
-      throw new NotFoundException('Mercado não encontrado');
+      throw new NotFoundException('Mercado nao encontrado');
     }
     return market;
   }
 
   async create(data: {
     name: string;
-    address: string;
-    city: string;
-    state: string;
-    lat?: number;
-    lng?: number;
+    address?: string;
+    city?: string;
+    state?: string;
+    latitude?: number;
+    longitude?: number;
   }) {
     return this.prisma.market.create({ data });
   }
@@ -50,12 +49,12 @@ export class MarketsService {
     address?: string;
     city?: string;
     state?: string;
-    lat?: number;
-    lng?: number;
+    latitude?: number;
+    longitude?: number;
   }) {
     const market = await this.prisma.market.findUnique({ where: { id } });
     if (!market) {
-      throw new NotFoundException('Mercado não encontrado');
+      throw new NotFoundException('Mercado nao encontrado');
     }
     return this.prisma.market.update({ where: { id }, data });
   }
